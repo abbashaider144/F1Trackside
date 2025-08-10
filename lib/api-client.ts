@@ -1,4 +1,10 @@
 import { CORS_PROXY_URL } from "./constants";
+import {
+ F1Status,
+ F1Ping,
+ F1RaceResultsResponse,
+ F1StandingsResponse
+} from "../types/api";
 
 
 // objects and such
@@ -90,28 +96,32 @@ async function fetchWithFallback(url: string, options: RequestInit = {}) {
 
 export const apiClient = {
  // Get the status of the API
- async getStatus(): Promise<any> {
+ async getStatus(): Promise<F1Status> {
    const response = await fetchWithFallback(`${baseUrl}/status`);
-   return handleResponse(response);
+   return handleResponse<F1Status>(response);
  },
 
 
- // Check if a user exists by UID
- async getUser(uid: string): Promise<User | null> {
-   const response = await fetchWithFallback(`${baseUrl}/api/v1/users/${uid}`);
-
-
-   if (!response.ok) {
-     return null; // Return null if the user is not found or an error occurs
-   }
-
-
-   return handleResponse<User>(response);
+ // Simple ping test
+ async ping(): Promise<F1Ping> {
+   const response = await fetchWithFallback(`${baseUrl}/status/ping`);
+   return handleResponse<F1Ping>(response);
  },
 
 
- // Get all things
- 
- 
+ // Get all F1 race results
+ async getF1RaceResults(): Promise<F1RaceResultsResponse> {
+   const response = await fetchWithFallback(`${baseUrl}/api/v1/f1-race-results`);
+   return handleResponse<F1RaceResultsResponse>(response);
+ },
+
+
+ // Get all F1 standings
+ async getF1Standings(): Promise<F1StandingsResponse> {
+   const response = await fetchWithFallback(`${baseUrl}/api/v1/f1-standings`);
+   return handleResponse<F1StandingsResponse>(response);
+ }
 }
+
+
 
