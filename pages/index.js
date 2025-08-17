@@ -1,83 +1,100 @@
-import { useEffect, useState } from 'react';
-import Layout from '../components/Layout';
-import { apiClient } from '../lib/api-client';
+"use client"
+
+import { useEffect, useState } from "react"
+import { Tab } from "@headlessui/react"
+import Layout from "../components/Layout"
+import { apiClient } from "../lib/api-client"
 
 export default function Analytics() {
-  const [groupedStandings, setGroupedStandings] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [standings, setStandings] = useState({})
+  const [loading, setLoading] = useState(true)
+
+  const seasonColors = {
+    "2025": "#C91A1A", // Ferrari Red
+    "2024": "#D6A84F", // Warm Gold
+    "2023": "#4B4E57", // Gunmetal Gray
+  }
 
   useEffect(() => {
-    async function fetchStandings() {
+    async function fetchData() {
       try {
-        const data = await apiClient.getF1Standings();
-        console.log("RAW DATA:", data);
-
-        // ✅ group standings by season
+        setLoading(true)
+        const data = await apiClient.getF1Standings() // or use your mock data
+        // convert into { season: [standings] }
         const grouped = data.reduce((acc, standing) => {
-          if (!acc[standing.season]) {
-            acc[standing.season] = [];
-          }
-          acc[standing.season].push(standing);
-          return acc;
-        }, {});
-
-        setGroupedStandings(grouped);
-      } catch (error) {
-        console.error('Error fetching F1 standings:', error);
+          if (!acc[standing.season]) acc[standing.season] = []
+          acc[standing.season].push(standing)
+          return acc
+        }, {})
+        setStandings(grouped)
+      } catch (err) {
+        console.error(err)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
-    fetchStandings();
-  }, []);
+    fetchData()
+  }, [])
+
+  const seasons = ["2025", "2024", "2023"] // only the years you have
+
+  if (loading) return <p className="text-center text-gray-500 mt-10">Loading standings...</p>
 
   return (
     <Layout>
-      <div className="text-center mb-6">
-        <h1 className="text-4xl font-f1-bold text-amber-600 mb-4">Analytics</h1>
-      </div>
+      <div className="max-w-6xl mx-auto p-6">
+        <h1 className="text-4xl font-bold text-[#C91A1A] mb-6 text-center">F1 Analytics Dashboard</h1>
 
-      {loading ? (
-        <p className="text-center text-gray-500">Loading standings...</p>
-      ) : Object.keys(groupedStandings).length > 0 ? (
-        <div className="space-y-10 max-w-5xl mx-auto">
-          {Object.keys(groupedStandings)
-            .sort((a, b) => b - a) // ✅ show latest season first
-            .map((season) => (
-              <div key={season}>
-                <h2 className="text-2xl font-bold mb-4">
-                  Driver Standings ({season})
-                </h2>
+        <Tab.Group defaultIndex={0}>
+          <Tab.List className="flex space-x-2 justify-center mb-4">
+            {seasons.map((season) => (
+              <Tab
+                key={season}
+                className={({ selected }) =>
+                  `px-4 py-2 font-semibold rounded-xl transition ${
+                    selected
+                      ? `bg-[${seasonColors[season]}] text-white shadow-lg`
+                      : "bg-[#2B2D33] text-white hover:bg-[#4B4E57]"
+                  }`
+                }
+              >
+                {season}
+              </Tab>
+            ))}
+          </Tab.List>
+
+          <Tab.Panels>
+            {seasons.map((season) => (
+              <Tab.Panel key={season} className="bg-[#000000] p-4 rounded-xl shadow-lg text-white">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full border border-gray-300 text-sm text-left">
-                    <thead className="bg-gray-100">
+                  <table className="min-w-full border border-[#4B4E57] text-left">
+                    <thead style={{ backgroundColor: seasonColors[season] }}>
                       <tr>
-                        <th className="border px-4 py-2">Pos</th>
-                        <th className="border px-4 py-2">Driver</th>
-                        <th className="border px-4 py-2">Constructor</th>
-                        <th className="border px-4 py-2">Points</th>
-                        <th className="border px-4 py-2">Wins</th>
+                        <th className="px-4 py-2 border">Pos</th>
+                        <th className="px-4 py-2 border">Driver</th>
+                        <th className="px-4 py-2 border">Constructor</th>
+                        <th className="px-4 py-2 border">Points</th>
+                        <th className="px-4 py-2 border">Wins</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {groupedStandings[season].map((standing) => (
-                        <tr key={standing.id}>
-                          <td className="border px-4 py-2">{standing.position}</td>
-                          <td className="border px-4 py-2">{standing.driver}</td>
-                          <td className="border px-4 py-2">{standing.constructor}</td>
-                          <td className="border px-4 py-2">{standing.points}</td>
-                          <td className="border px-4 py-2">{standing.wins}</td>
+                      {standings[season]?.map((s) => (
+                        <tr key={s.id} className="hover:bg-[#2B2D33]">
+                          <td className="border px-4 py-2">{s.position}</td>
+                          <td className="border px-4 py-2">{s.driver}</td>
+                          <td className="border px-4 py-2">{s.constructor}</td>
+                          <td className="border px-4 py-2">{s.points}</td>
+                          <td className="border px-4 py-2">{s.wins}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Tab.Panel>
             ))}
-        </div>
-      ) : (
-        <p className="text-center text-gray-500">No standings data found.</p>
-      )}
+          </Tab.Panels>
+        </Tab.Group>
+      </div>
     </Layout>
-  );
+  )
 }
