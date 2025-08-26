@@ -1,14 +1,14 @@
 "use client"
-
-
 import { useEffect, useState } from "react"
-import { Tab } from "@headlessui/react"
 import Layout from "../components/Layout"
 import { apiClient } from "../lib/api-client"
+import { Tab } from "@headlessui/react"
+import { Calendar, Trophy, Clock, MapPin, Flag } from "lucide-react"
+import { SEASON_THEMES, AVAILABLE_SEASONS } from "../constants/constants"
 
 
-export default function Standings() {
- const [standings, setStandings] = useState({})
+export default function RaceResults() {
+ const [raceData, setRaceData] = useState({})
  const [loading, setLoading] = useState(true)
 
 
@@ -23,17 +23,18 @@ export default function Standings() {
    async function fetchData() {
      try {
        setLoading(true)
-       const data = await apiClient.getF1Standings() // or use your mock data
+       const data = await apiClient.getF1RaceResults()
        console.log("data", data)
-       // convert into { season: [standings] }
-       const grouped = data.reduce((acc, standing) => {
-         if (!acc[standing.season]) acc[standing.season] = []
-         acc[standing.season].push(standing)
+      
+       // Group data by season - exactly like standings page
+       const grouped = data.reduce((acc, result) => {
+         if (!acc[result.season]) acc[result.season] = []
+         acc[result.season].push(result)
          return acc
        }, {})
-       setStandings(grouped)
+       setRaceData(grouped)
      } catch (err) {
-       console.error(err)
+       console.error("Failed to fetch race data:", err)
      } finally {
        setLoading(false)
      }
@@ -45,13 +46,13 @@ export default function Standings() {
  const seasons = ["2025", "2024", "2023"] // only the years you have
 
 
- if (loading) return <p className="text-center text-gray-500 mt-10">Loading standings...</p>
+ if (loading) return <p className="text-center text-gray-500 mt-10">Loading race results...</p>
 
 
  return (
    <Layout>
      <div className="max-w-6xl mx-auto p-6">
-       <h1 className="text-4xl font-bold text-[#C91A1A] mb-6 text-center">F1 Official Standings</h1>
+       <h1 className="text-4xl font-bold text-[#C91A1A] mb-6 text-center">F1 Race Results</h1>
 
 
        <Tab.Group defaultIndex={0}>
@@ -80,21 +81,23 @@ export default function Standings() {
                  <table className="min-w-full border border-[#4B4E57] text-left">
                    <thead style={{ backgroundColor: seasonColors[season] }}>
                      <tr>
-                       <th className="px-4 py-2 border">Pos</th>
+                       <th className="px-4 py-2 border">Round</th>
+                       <th className="px-4 py-2 border">Circuit</th>
                        <th className="px-4 py-2 border">Driver</th>
-                       <th className="px-4 py-2 border">Constructor</th>
-                       <th className="px-4 py-2 border">Points</th>
-                       <th className="px-4 py-2 border">Wins</th>
+                       <th className="px-4 py-2 border">Result</th>
+                       <th className="px-4 py-2 border">Grid</th>
+                       <th className="px-4 py-2 border">Fastest Lap</th>
                      </tr>
                    </thead>
                    <tbody>
-                     {standings[season]?.map((s) => (
-                       <tr key={s.id} className="hover:bg-[#2B2D33]">
-                         <td className="border px-4 py-2">{s.position}</td>
-                         <td className="border px-4 py-2">{s.driver}</td>
-                         <td className="border px-4 py-2">{s.constructor}</td>
-                         <td className="border px-4 py-2">{s.points}</td>
-                         <td className="border px-4 py-2">{s.wins}</td>
+                     {raceData[season]?.map((r) => (
+                       <tr key={r.id} className="hover:bg-[#2B2D33]">
+                         <td className="border px-4 py-2">{r.round}</td>
+                         <td className="border px-4 py-2">{r.circuit_Name}</td>
+                         <td className="border px-4 py-2">{r.driver_Name}</td>
+                         <td className="border px-4 py-2">{r.result}</td>
+                         <td className="border px-4 py-2">{r.grid}</td>
+                         <td className="border px-4 py-2">{r.fastest_Lap_Time}</td>
                        </tr>
                      ))}
                    </tbody>
